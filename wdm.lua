@@ -143,16 +143,16 @@ do
 
 		local default = {}
 		setmetatable(default, {__index = function() return default end})
-		local function defenv(e)
-			return setmetatable({}, {__index = function(t,k)
-				if e[k] then return e[k]  else return default end
-			end})
-		end
+		local current
+		local env = setmetatable({}, {__index = function(t,k)
+			if current[k] then return current[k]  else return default end
+		end})
+		setfenv(cond, env)
 
 		local function findElements(x)
 			for _,e in ipairs(x or {}) do
 				if type(e) == 'table' then
-					setfenv(cond, defenv(e))
+					current = e
 					if cond(e) then
 						table.insert(res, e)
 					end
