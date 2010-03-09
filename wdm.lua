@@ -137,9 +137,11 @@ do
 	-- during iteration, the environment for the condition is set to each element
 	function getElements(doc, cond)
 		local res = {}
-		cond = cond
-			and assert(loadstring('return function() return '..cond..' end'))()
-			or function() return true end
+		if type(cond) == "string" then
+			cond = assert(loadstring('return function() return '..cond..' end'))()
+		else
+			cond = cond or function() return true end
+		end
 
 		local default = {}
 		setmetatable(default, {__index = function() return default end})
