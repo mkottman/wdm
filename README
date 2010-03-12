@@ -1,0 +1,64 @@
+Web data mining for Lua
+=======================
+
+Wdm is a collection of simple utility functions for web page retrieval and processing
+that I use for data mining purposes, like gathering the history of prices of my
+favorite products. It provides very simple interface over other libraries, mainly
+cURL and HTML parsing. Maybe these will be useful to someone else...
+
+Copyright 2010(c) Michal Kottman
+Licensed under the MIT License.
+
+Dependencies
+------------
+
+Wdm depends on cURL for http retrieval, all other dependencies are optional,
+in case a library is not found, the functions from it will simply not be avaliable.
+
+* cURL binding - either luacurl [1] or Lua-cURL [2] should work
+* luasql [3] - uses sqlite3 for simple database
+* iconv [4] - for character conversion into utf8
+* tidy [5] - bindings for HTML Tidy, to be able to parse those badly-written sites
+* bz2 [6] - bindings to bzip2 for compression of cached pages
+
+[1] http://luacurl.luaforge.net/
+[2] http://luaforge.net/projects/lua-curl/
+[3] http://www.keplerproject.org/luasql/
+[4] http://luaforge.net/projects/lua-iconv/
+[5] http://github.com/mkottman/tidy
+[6] http://github.com/mkottman/lua-bz2
+
+Example of use
+--------------
+
+The next example retrieves the first 10 pages of Google search for "lua"
+and prints the links and text. Shows how to use the functions get(), toTidy(),
+text() and getElements().
+
+	require 'wdm'
+
+	-- start page
+	local page = 'http://www.google.sk/search?q=lua'
+	for i=1,10 do
+		-- retrieve the page
+		local src = get(page)
+		-- convert it to table
+		local t = toTidy(src)
+		
+		-- get links with class "l"
+		local res = getElements(t, 'tag=="a" and class=="l"')
+		for _,link in ipairs(res) do
+			-- print the link url and link text
+			print(link.href, text(link))
+		end
+		
+		-- get the element, whose first child is the 'next' image
+		local nxt = getElements(t, 'self[1].tag=="img" and self[1].src=="nav_next.gif"')[1]
+		-- construct the next url
+		page = 'http://www.google.com' .. nxt.href
+	end
+
+Documentation
+-------------
+
+TODO later
