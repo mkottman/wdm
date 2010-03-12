@@ -1,4 +1,4 @@
-require 'luasql.sqlite3'
+pcall(require, 'luasql.sqlite3')
 
 -- handle luacurl and Lua-cURL
 pcall(require, 'curl')
@@ -176,25 +176,27 @@ end
 
 -- Database
 do
-	local sqlite3 = assert(luasql.sqlite3())
-	local db = assert(sqlite3:connect('database.db'))
+	if luasql then
+		local sqlite3 = assert(luasql.sqlite3())
+		local db = assert(sqlite3:connect('database.db'))
 
-	-- simplified access to SQL - returns an iterator function in case of SELECT
-	function sql(s)
-		log('[sql]', s)
-		local cur, err = db:execute(s)
-		assert(cur, (err or '')..' in '..s)
-		if type(cur) == 'number' then
-			return cur
-		else
-			return function()
-				return cur:fetch()
+		-- simplified access to SQL - returns an iterator function in case of SELECT
+		function sql(s)
+			log('[sql]', s)
+			local cur, err = db:execute(s)
+			assert(cur, (err or '')..' in '..s)
+			if type(cur) == 'number' then
+				return cur
+			else
+				return function()
+					return cur:fetch()
+				end
 			end
 		end
-	end
 
-	function lastid()
-		return db:getlastautoid()
+		function lastid()
+			return db:getlastautoid()
+		end
 	end
 end
 
