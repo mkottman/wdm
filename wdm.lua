@@ -135,10 +135,14 @@ do
 	-- quasi-XPath: accepts a table and a string/function condition
 	-- returns an array of elements, for which the function returns true
 	-- during iteration, the environment for the condition is set to each element
+	local code_cache = setmetatable({}, {__mode="v"}
 	function getElements(doc, cond)
 		local res = {}
 		if type(cond) == "string" then
-			cond = assert(loadstring('return function() return '..cond..' end'))()
+			if code_cache[cond] then cond = code_cache[cond] else
+				cond = assert(loadstring('return function() return '..cond..' end'))()
+				code_cache[cond] = cond
+			end
 		else
 			cond = cond or function() return true end
 		end
