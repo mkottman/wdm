@@ -28,10 +28,15 @@ in case a library is not found, the functions from it will simply not be avaliab
 [5] http://github.com/mkottman/tidy
 [6] http://github.com/mkottman/lua-bz2
 
+Installation
+------------
+
+Just copy wdm.lua into your package.path
+
 Example of use
 --------------
 
-The next example retrieves the first 10 pages of Google search for "lua"
+This example retrieves the first 10 pages of Google search for "lua"
 and prints the links and text. Shows how to use the functions get(), toTidy(),
 text() and getElements().
 
