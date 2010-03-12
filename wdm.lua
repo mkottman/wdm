@@ -32,17 +32,19 @@ function log(...)
 	end
 end
 
--- XML
+-- HTML Parsing
 do
 	local function decode(s)
 		return (s:gsub('&(.-);', { amp = '&', lt = '<', gt = '>', nbsp = ' ' }))
 	end
 
 	-- modified Roberto's XML parser http://lua-users.org/wiki/LuaXml to behave like the
-	-- one from Yutaka Ueno - creates flatter trees
-	function parseargs(xml, s, parent)
-		local arg = setmetatable({xml=xml}, {__index = {parent = parent}})
-		string.gsub(s, "(%w+)=([\"'])(.-)%2", function (w, _, a)
+	-- one from Yutaka Ueno - creates more shallow trees, produces less tables
+
+	-- 'tag' is not used as an attribute in (X)HTML 3, 4, 5, so I can use it as the label
+	function parseargs(tag, s, parent)
+		local arg = setmetatable({tag=tag}, {__index = {parent = parent}})
+		string.gsub(s, "([%w:]+)=([\"'])(.-)%2", function (w, _, a)
 			arg[w] = decode(a)
 		end)
 		return arg
@@ -55,27 +57,29 @@ do
 		local ni,c,label,xarg, empty
 		local i, j = 1, 1
 		while true do
-			ni,j,c,label,xarg, empty = string.find(s, "<(%/?)([%?%w]+)(.-)(%/?)>", i)
+			ni,j,dt,c,label,xarg, empty = string.find(s, "<(!?)(%/?)([%?%w]+)(.-)(%/?)>", i)
 			if not ni then break end
-			local text = string.sub(s, i, ni-1)
-			if not string.find(text, "^%s*$") then
-				table.insert(top, decode(text))
-			end
-			if empty == "/" then  -- empty element tag
-				table.insert(top, parseargs(label, xarg, top))
-			elseif c == "" then   -- start tag
-				top = parseargs(label, xarg, top)
-				table.insert(stack, top)   -- new level
-			else  -- end tag
-				local toclose = table.remove(stack)  -- remove top
-				top = stack[#stack]
-				if #stack < 1 then
-					error("nothing to close with "..label)
+			if dt=="" then
+				local text = string.sub(s, i, ni-1)
+				if not string.find(text, "^%s*$") then
+					table.insert(top, decode(text))
 				end
-				if toclose.xml ~= label then
-					error("trying to close "..toclose.xml.." with "..label)
+				if empty == "/" then  -- empty element tag
+					table.insert(top, parseargs(label, xarg, top))
+				elseif c == "" then   -- start tag
+					top = parseargs(label, xarg, top)
+					table.insert(stack, top)   -- new level
+				else  -- end tag
+					local toclose = table.remove(stack)  -- remove top
+					top = stack[#stack]
+					if #stack < 1 then
+						error("nothing to close with "..label)
+					end
+					if toclose.tag ~= label then
+						error("trying to close "..toclose.tag.." with "..label)
+					end
+					table.insert(top, toclose)
 				end
-				table.insert(top, toclose)
 			end
 			i = j+1
 		end
@@ -84,7 +88,7 @@ do
 			table.insert(stack[#stack], text)
 		end
 		if #stack > 1 then
-			error("unclosed "..stack[#stack].xml)
+			error("unclosed "..stack[#stack].tag)
 		end
 		return stack[1]
 	end
@@ -93,7 +97,6 @@ do
 		local tidy = tidy.new()
 		tidy:setCharEncoding("utf8")
 
-		-- returns a LOM-like (http://www.keplerproject.org/luaexpat/lom.html) table 
 		function toTidy(s)
 			tidy:parse(s)
 			return tidy:toTable()
