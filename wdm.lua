@@ -154,6 +154,7 @@ do
 		setmetatable(default, {__index = function() return default end})
 		local current
 		local env = setmetatable({}, {__index = function(t,k)
+			if k=="self" then return t end
 			if current[k] then return current[k]  else return default end
 		end})
 		setfenv(cond, env)
